@@ -18,7 +18,7 @@ void QueenSolverMenu::render(Window* window)
 
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->WorkPos);
     ImGui::SetNextWindowSize(ImGui::GetMainViewport()->WorkSize);
-    ImGui::Begin("QueenSolver", 0, ImGuiWindowFlags_NoResize);
+    ImGui::Begin("QueenSolver", &open, ImGuiWindowFlags_NoResize);
 
     if (ImGui::SliderInt("Size", &gridSize, 0, MAX_GRID_SIZE))
     {
