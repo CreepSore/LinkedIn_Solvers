@@ -7,9 +7,6 @@
 void QueenSolverMenu::onAttach(Window* window)
 {
     setGridSize(10);
-
-    ImGui::SetClipboardText("1,1,1,1,1,1,1,1,1,7,7,6,1,1,1,1,7,7,6,6,5,4,4,1,8,8,6,5,5,4,1,1,8,8,8,8,5,3,3,1,8,8,8,8,8,8,3,2,8,8,8,8,8,8,2,2,8,8,8,8,8,8,8,2");
-    fromClipboard();
 }
 
 void QueenSolverMenu::render(Window* window)
