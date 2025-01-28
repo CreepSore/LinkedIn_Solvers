@@ -53,6 +53,53 @@ std::unique_ptr<std::vector<Vec2>> QueenSolver::solve()
     return this->solve(result, blockedX, blockedY, blockedColor);
 }
 
+void QueenSolver::setGridFromText(const std::string& text)
+{
+    int gridSize = 0;
+    std::string num;
+    std::vector<uint8_t> dataVector;
+
+    for (const char c : text)
+    {
+        if (c == ',')
+        {
+            dataVector.push_back(atoi(num.data()));
+            num.clear();
+            continue;
+        }
+
+        num.push_back(c);
+    }
+
+    if (!num.empty())
+    {
+        dataVector.push_back(atoi(num.data()));
+    }
+
+    gridSize = static_cast<int>(std::sqrt(dataVector.size()));
+
+    grid.clear();
+    grid.reserve(gridSize);
+    int offset = 0;
+    for (int y = 0; y < gridSize; y++)
+    {
+        std::vector<uint8_t> vector{};
+        vector.reserve(gridSize);
+
+        for (int x = 0; x < gridSize; x++)
+        {
+            vector.push_back(dataVector[offset]);
+            offset++;
+        }
+        grid.push_back(vector);
+    }
+
+    // Ew... but doesn't matter:
+    // We use std::move so we don't copy any data and don't lose
+    // any performance
+    setGrid(grid);
+}
+
 std::unique_ptr<std::vector<Vec2>> QueenSolver::solve(
     const std::unique_ptr<std::vector<Vec2>>& result,
     std::vector<bool>& blockedX,
