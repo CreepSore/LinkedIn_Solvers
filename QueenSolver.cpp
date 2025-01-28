@@ -10,7 +10,7 @@ QueenSolver::QueenSolver() {
 
 }
 
-void QueenSolver::setGrid(std::vector<std::vector<uint8_t>> grid)
+void QueenSolver::setGrid(std::vector<std::vector<uint8_t>>& grid)
 {
     this->grid = std::move(grid);
 

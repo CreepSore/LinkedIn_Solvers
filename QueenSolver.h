@@ -33,7 +33,7 @@ struct Vec2
 class QueenSolver {
 public:
     QueenSolver();
-    void setGrid(std::vector<std::vector<uint8_t>> grid);
+    void setGrid(std::vector<std::vector<uint8_t>>& grid);
     std::vector<std::vector<uint8_t>>& getGrid();
     std::unique_ptr<std::vector<Vec2>> solve();
     void setGridFromText(const std::string& text);
