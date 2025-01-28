@@ -1,7 +1,7 @@
 #pragma once
 #include "imgui.h"
 #include "IRenderable.h"
-#include "Solver.h"
+#include "QueenSolver.h"
 #include "SFML/Graphics/RenderWindow.hpp"
 
 class QueenSolverMenu : public IRenderable {

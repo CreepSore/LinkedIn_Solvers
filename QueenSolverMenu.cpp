@@ -161,7 +161,7 @@ void QueenSolverMenu::setGridSize(int size)
 
 void QueenSolverMenu::solve()
 {
-    Solver solver {};
+    QueenSolver solver {};
     solver.setGrid(gridValues);
     auto start = std::chrono::high_resolution_clock::now();
     result = solver.solve();

@@ -30,9 +30,9 @@ struct Vec2
     }
 };
 
-class Solver {
+class QueenSolver {
 public:
-    Solver();
+    QueenSolver();
     void setGrid(std::vector<std::vector<uint8_t>> grid);
     std::vector<std::vector<uint8_t>>& getGrid();
     std::unique_ptr<std::vector<Vec2>> solve();

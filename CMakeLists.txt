@@ -42,7 +42,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(ImGui-SFML)
 
-add_executable (Queen-Solver "main.cpp" "main.h" "Solver.h" "Solver.cpp" "IRenderable.h" "Window.h" "Window.cpp" "Menu.h" "Menu.cpp" "QueenSolverMenu.cpp" "QueenSolverMenu.h")
+add_executable (Queen-Solver "main.cpp" "main.h" "QueenSolver.h" "QueenSolver.cpp" "IRenderable.h" "Window.h" "Window.cpp" "Menu.h" "Menu.cpp" "QueenSolverMenu.cpp" "QueenSolverMenu.h")
 
 target_include_directories(
     Queen-Solver

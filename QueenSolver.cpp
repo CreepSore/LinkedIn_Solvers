@@ -1,4 +1,4 @@
-#include "Solver.h"
+#include "QueenSolver.h"
 
 #include <algorithm>
 #include <iostream>
@@ -6,11 +6,11 @@
 #include <set>
 #include <utility>
 
-Solver::Solver() {
+QueenSolver::QueenSolver() {
 
 }
 
-void Solver::setGrid(std::vector<std::vector<uint8_t>> grid)
+void QueenSolver::setGrid(std::vector<std::vector<uint8_t>> grid)
 {
     this->grid = std::move(grid);
 
@@ -27,12 +27,12 @@ void Solver::setGrid(std::vector<std::vector<uint8_t>> grid)
     }
 }
 
-std::vector<std::vector<uint8_t>>& Solver::getGrid()
+std::vector<std::vector<uint8_t>>& QueenSolver::getGrid()
 {
     return this->grid;
 }
 
-std::unique_ptr<std::vector<Vec2>> Solver::solve()
+std::unique_ptr<std::vector<Vec2>> QueenSolver::solve()
 {
     const std::unique_ptr<std::vector<Vec2>> result(new std::vector<Vec2>());
     std::vector<bool>blockedX{};
@@ -53,7 +53,7 @@ std::unique_ptr<std::vector<Vec2>> Solver::solve()
     return this->solve(result, blockedX, blockedY, blockedColor);
 }
 
-std::unique_ptr<std::vector<Vec2>> Solver::solve(
+std::unique_ptr<std::vector<Vec2>> QueenSolver::solve(
     const std::unique_ptr<std::vector<Vec2>>& result,
     std::vector<bool>& blockedX,
     std::vector<bool>& blockedY,
