@@ -1,6 +1,6 @@
 #pragma once
 #include "IRenderable.h"
-#include "QueenSolver.h"
+#include "QueenSolverMenu.h"
 #include "SFML/Window.hpp"
 #include "SFML/Graphics.hpp"
 
@@ -13,5 +13,5 @@ public:
 
 private:
     bool queenSolverOpen = false;
-    std::shared_ptr<QueenSolver> queenSolver;
+    std::shared_ptr<QueenSolverMenu> queenSolver;
 };

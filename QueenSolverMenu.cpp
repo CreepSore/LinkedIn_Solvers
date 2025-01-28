@@ -1,10 +1,10 @@
-#include "QueenSolver.h"
+#include "QueenSolverMenu.h"
 
 #include <iostream>
 
 #include "imgui.h"
 
-void QueenSolver::onAttach(Window* window)
+void QueenSolverMenu::onAttach(Window* window)
 {
     setGridSize(10);
 
@@ -12,7 +12,7 @@ void QueenSolver::onAttach(Window* window)
     fromClipboard();
 }
 
-void QueenSolver::render(Window* window)
+void QueenSolverMenu::render(Window* window)
 {
     if(!open)
     {
@@ -144,7 +144,7 @@ void QueenSolver::render(Window* window)
     ImGui::End();
 }
 
-void QueenSolver::setGridSize(int size)
+void QueenSolverMenu::setGridSize(int size)
 {
     gridSize = size;
     gridValues.clear();
@@ -162,7 +162,7 @@ void QueenSolver::setGridSize(int size)
     }
 }
 
-void QueenSolver::solve()
+void QueenSolverMenu::solve()
 {
     Solver solver {};
     solver.setGrid(gridValues);
@@ -173,7 +173,7 @@ void QueenSolver::solve()
     std::cout << "Queen-Solve-Runtime: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start) << "\n";
 }
 
-ImVec4 QueenSolver::getColorForNumber(uint8_t color)
+ImVec4 QueenSolverMenu::getColorForNumber(uint8_t color)
 {
     switch(color)
     {
@@ -202,7 +202,7 @@ ImVec4 QueenSolver::getColorForNumber(uint8_t color)
     }
 }
 
-void QueenSolver::toClipboard() const
+void QueenSolverMenu::toClipboard() const
 {
     std::string result;
 
@@ -220,13 +220,13 @@ void QueenSolver::toClipboard() const
     ImGui::SetClipboardText(result.data());
 }
 
-void QueenSolver::fromClipboard()
+void QueenSolverMenu::fromClipboard()
 {
     std::string data = ImGui::GetClipboardText();
     fromText(data);
 }
 
-void QueenSolver::fromText(const std::string& text)
+void QueenSolverMenu::fromText(const std::string& text)
 {
     std::string num;
     std::vector<uint8_t> dataVector;

@@ -4,7 +4,7 @@
 
 Menu::Menu()
 {
-    queenSolver = std::shared_ptr<QueenSolver>{ new QueenSolver() };
+    queenSolver = std::shared_ptr<QueenSolverMenu>{ new QueenSolverMenu() };
     subrenderables.push_back(queenSolver);
 }
 

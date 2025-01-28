@@ -4,7 +4,7 @@
 #include "Solver.h"
 #include "SFML/Graphics/RenderWindow.hpp"
 
-class QueenSolver : public IRenderable {
+class QueenSolverMenu : public IRenderable {
 public:
     void onAttach(Window* window) override;
     void render(Window* window) override;
