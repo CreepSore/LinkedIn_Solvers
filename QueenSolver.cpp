@@ -10,9 +10,9 @@ QueenSolver::QueenSolver() {
 
 }
 
-void QueenSolver::setGrid(std::vector<std::vector<uint8_t>>& grid)
+void QueenSolver::setGrid(std::vector<std::vector<uint8_t>> grid)
 {
-    this->grid = std::move(grid);
+    this->grid = grid;
 
     this->neededQueens = 0;
     for(size_t x = 0; x < this->grid.size(); x++)
@@ -97,7 +97,7 @@ void QueenSolver::setGridFromText(const std::string& text)
     // Ew... but doesn't matter:
     // We use std::move so we don't copy any data and don't lose
     // any performance
-    setGrid(grid);
+    setGrid(std::move(grid));
 }
 
 std::unique_ptr<std::vector<Vec2>> QueenSolver::solve(
