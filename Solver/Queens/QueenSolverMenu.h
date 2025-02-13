@@ -1,6 +1,6 @@
 #pragma once
 #include "imgui.h"
-#include "IRenderable.h"
+#include "../UI/IRenderable.h"
 #include "QueenSolver.h"
 #include "SFML/Graphics/RenderWindow.hpp"
 

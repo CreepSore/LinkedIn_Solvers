@@ -110,50 +110,38 @@ std::unique_ptr<std::vector<Vec2>> QueenSolver::solve(
 {
     const auto size = grid.size();
 
-    auto canPlace = [this](
-        const Vec2& position,
-        std::vector<Vec2>* queens,
-        std::vector<bool>& blockedX,
-        std::vector<bool>& blockedY,
-        std::vector<bool>& blockedColor
-    ) {
-        if(blockedX[position.x])
-        {
-            return false;
-        }
-
-        if(blockedY[position.y])
-        {
-            return false;
-        }
-
-        if(blockedColor[this->grid[position.y][position.x] - 1])
-        {
-            return false;
-        }
-
-        for (const Vec2& queen : *queens)
-        {
-            if (std::abs(position.x - queen.x) == 1 && std::abs(position.y - queen.y) == 1)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    };
-
     for(size_t y = 0; y < size; y++)
     {
+        if(blockedY[y])
+        {
+            continue;
+        }
+
         for(size_t x = 0; x < size; x++)
         {
-            Vec2 currentPosition{ static_cast<uint16_t>(x), static_cast<uint16_t>(y) };
-            const auto currentColor = this->grid[currentPosition.y][currentPosition.x];
-            if(!canPlace(currentPosition, result.get(), blockedX, blockedY, blockedColor))
+            if(blockedX[x] || blockedColor[this->grid[y][x] - 1])
             {
                 continue;
             }
 
+            bool valid = true;
+
+            for (const Vec2& queen : *result)
+            {
+                if (std::abs(static_cast<uint16_t>(x) - queen.x) == 1 && std::abs(static_cast<uint16_t>(y) - queen.y) == 1)
+                {
+                    valid = false;
+                    break;
+                }
+            }
+
+            if(!valid)
+            {
+                continue;
+            }
+
+            Vec2 currentPosition{ static_cast<uint16_t>(x), static_cast<uint16_t>(y) };
+            const auto currentColor = this->grid[currentPosition.y][currentPosition.x];
 
             std::unique_ptr<std::vector<Vec2>> nextQueens{ new std::vector(*result) };
             nextQueens->push_back(currentPosition);

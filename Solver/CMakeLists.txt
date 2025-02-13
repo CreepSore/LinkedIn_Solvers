@@ -9,7 +9,7 @@ if (POLICY CMP0141)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
-project ("Queen-Solver")
+project ("LinkedInSolver")
 
 FetchContent_Declare(
     SFML
@@ -42,19 +42,19 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(ImGui-SFML)
 
-add_executable (Queen-Solver "main.cpp" "main.h" "QueenSolver.h" "QueenSolver.cpp" "IRenderable.h" "Window.h" "Window.cpp" "Menu.h" "Menu.cpp" "QueenSolverMenu.cpp" "QueenSolverMenu.h")
+add_executable (LinkedInSolver "main.cpp" "main.h" "Queens/QueenSolver.h" "Queens/QueenSolver.cpp" "UI/IRenderable.h" "UI/Window.h" "UI/Window.cpp" "UI/Menu.h" "UI/Menu.cpp" "Queens/QueenSolverMenu.cpp" "Queens/QueenSolverMenu.h" "Tango/TangoSolver.cpp" "Tango/TangoSolver.h" "Shared/Vec2.h" "Tango/TangoSolverMenu.cpp" "Tango/TangoSolverMenu.h" "UI/ImGuiExtensions.h")
 
 target_include_directories(
-    Queen-Solver
+    LinkedInSolver
     PRIVATE
     ${IMGUI_DIR}
 )
 
 target_link_libraries(
-    Queen-Solver
+    LinkedInSolver
     PRIVATE
     SFML::Graphics
     ImGui-SFML::ImGui-SFML
 )
 
-set_property(TARGET Queen-Solver PROPERTY CXX_STANDARD 20)
+set_property(TARGET LinkedInSolver PROPERTY CXX_STANDARD 20)

@@ -5,8 +5,8 @@
 #include <imgui.h>
 #include <imgui-SFML.h>
 
-#include "Menu.h"
-#include "Window.h"
+#include "UI/Menu.h"
+#include "UI/Window.h"
 
 struct CliArguments
 {

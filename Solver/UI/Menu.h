@@ -1,8 +1,9 @@
 #pragma once
 #include "IRenderable.h"
-#include "QueenSolverMenu.h"
+#include "../Queens/QueenSolverMenu.h"
 #include "SFML/Window.hpp"
-#include "SFML/Graphics.hpp"
+
+class TangoSolverMenu;
 
 class Menu : public IRenderable {
 public:
@@ -12,6 +13,6 @@ public:
     void onDeattach(Window* window) override;
 
 private:
-    bool queenSolverOpen = false;
-    std::shared_ptr<QueenSolverMenu> queenSolver;
+    std::shared_ptr<QueenSolverMenu> queenSolver = nullptr;
+    std::shared_ptr<TangoSolverMenu> tangoSolver = nullptr;
 };
