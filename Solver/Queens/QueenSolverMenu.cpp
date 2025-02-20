@@ -67,7 +67,7 @@ void QueenSolverMenu::render(Window* window)
         toClipboard();
     }
 
-    grid->render(ImVec2(32, 32), ImVec2(1, 1));
+    grid->render(GridRenderOptions { .buttonSize = ImVec2(32, 32), .itemSpacing = ImVec2(1, 1), .autofit = true });
 
     ImGui::End();
 }
@@ -94,9 +94,12 @@ void QueenSolverMenu::solve()
 
     std::cout << "Queen-Solve-Runtime: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start) << "\n";
 
-    for (const auto& value : *result)
+    if(result != nullptr)
     {
-        grid->setColor(value.x, value.y, ImVec4(0, 1, 0, 1));
+        for (const auto& value : *result)
+        {
+            grid->setColor(value.x, value.y, ImVec4(0, 1, 0, 1));
+        }
     }
 }
 
@@ -142,7 +145,7 @@ void QueenSolverMenu::fromClipboard()
 
 void QueenSolverMenu::fromText(const std::string& text)
 {
-    grid = Grid<>::fromString(text);
+    grid = Grid<>::constructFromString(text);
 
     for(size_t x = 0; x < grid->getWidth(); x++)
     {

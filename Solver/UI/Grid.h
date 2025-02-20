@@ -21,7 +21,16 @@ enum class GridMouseEvent : uint8_t
     DOWN = 1
 };
 
+struct GridRenderOptions
+{
+    ImVec2 buttonSize = ImVec2(-1, -1);
+    ImVec2 itemSpacing = ImVec2(-1, -1);
+    bool clipboardButtons = false;
+    bool autofit = false;
+};
+
 template <typename ValueType = uint8_t, typename SizeType = size_t>
+requires std::integral<SizeType> or std::floating_point<SizeType>
 struct Grid {
     typedef std::function<void(
         SizeType x,
@@ -132,17 +141,54 @@ struct Grid {
         return result;
     }
 
-    void render(ImVec2 buttonSize = ImVec2(-1, -1), ImVec2 itemSpacing = ImVec2(-1, -1)) const
+    void render(const GridRenderOptions& renderOptions = {})
     {
+        ImGui::PushID("Grid");
         ImGuiStyle& style = ImGui::GetStyle();
 
-        ImVec2 vecButtonSize = buttonSize.x != -1
-            ? buttonSize
+        if(renderOptions.clipboardButtons)
+        {
+            if(ImGui::Extension::ColoredButton("From Clipboard -->", ImVec4(0.25f, 0.25f, 0.8f, 1)))
+            {
+                fromString(std::move(ImGui::GetClipboardText()));
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Extension::ColoredButton("To Clipboard <--", ImVec4(0, 0.8f, 0, 1)))
+            {
+                ImGui::SetClipboardText(toString().data());
+            }
+        }
+
+        if(width == 0 || height == 0)
+        {
+            ImGui::PopID();
+            return;
+        }
+
+        ImVec2 vecButtonSize = renderOptions.buttonSize.x != -1
+            ? renderOptions.buttonSize
             : ImVec2(32, 32);
 
-        ImVec2 vecItemSpacing = itemSpacing.x != -1
-            ? itemSpacing
+
+        ImVec2 vecItemSpacing = renderOptions.itemSpacing.x != -1
+            ? renderOptions.itemSpacing
             : style.ItemSpacing;
+
+        if(renderOptions.autofit)
+        {
+            const ImVec2 avail = ImGui::GetContentRegionAvail();
+
+            const float gapW = std::ceil(vecItemSpacing.x * (static_cast<float>(width) + 1));
+            const float gapH = std::ceil(vecItemSpacing.y * (static_cast<float>(height) + 1));
+
+            const float w = std::floor(std::floor(avail.x - gapW) / (static_cast<float>(width) + 1));
+            const float h = std::floor(std::floor(avail.y - gapH) / (static_cast<float>(height) + 1));
+            float result = std::min(h, w);
+
+            vecButtonSize = { result, result };
+        }
 
         ImGui::PushStyleVarX(ImGuiStyleVar_ItemSpacing, vecItemSpacing.x);
         ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, vecItemSpacing.y);
@@ -197,6 +243,7 @@ struct Grid {
         }
 
         ImGui::PopStyleVar(2);
+        ImGui::PopID();
     }
 
     void setColor(SizeType x, SizeType y, ImVec4 color = ImVec4(-1, -1, -1, -1))
@@ -243,7 +290,7 @@ struct Grid {
                     ss << ',';
                 }
 
-                ss << std::to_string(rawGrid[y][x]);
+                ss << std::to_string(static_cast<int64_t>(rawGrid[y][x]));
             }
         }
 
@@ -252,59 +299,75 @@ struct Grid {
         return ss.str();
     }
 
-    static std::unique_ptr<Grid> fromString(const std::string& str, GridMouseEventHandler mouseEventHandler = nullptr)
+    void fromString(const std::string& str)
     {
         decltype(rawGrid) grid;
         size_t width = 0;
+        bool widthFixed = false;
 
         std::string input;
         std::vector<ValueType> row;
-        for(size_t i = 0; i < str.size(); i++)
+        for (size_t i = 0; i < str.size(); i++)
         {
             const char c = str[i];
 
-            if(c == '\r')
+            if (c == '\r')
             {
                 continue;
             }
 
-            if(c == ',' || c == '\n')
+            if (c == ',' || c == '\n')
             {
-                row.push_back(std::stol(input));
-                input.clear();
-
-                if(c == '\n' && !row.empty())
+                if (!widthFixed)
                 {
-                    grid.push_back(row);
-                    if (width == 0)
-                    {
-                        width = i;
-                    }
+                    width++;
+                }
 
-                    row = std::vector<ValueType>();
-                    if (width != 0)
+                if(!input.empty())
+                {
+                    row.push_back(std::stol(input));
+                    input.clear();
+
+                    if (c == '\n' && !row.empty())
                     {
-                        row.reserve(width);
+                        widthFixed = true;
+                        grid.push_back(row);
+
+                        row = std::vector<ValueType>();
+                        if (widthFixed)
+                        {
+                            row.reserve(width);
+                        }
                     }
                 }
             }
-            else
+            else if (c >= '0' && c <= '9')
             {
                 input.push_back(c);
             }
         }
 
-        if(!input.empty())
+        if (!input.empty())
         {
             row.push_back(std::stol(input));
         }
 
-        if(!row.empty() && row.size() == width)
+        if (!row.empty() && row.size() == width)
         {
             grid.push_back(row);
         }
 
-        return std::make_unique<Grid>(grid, mouseEventHandler);
+        this->width = width;
+        this->height = row.size();
+        this->rawGrid = grid;
+    }
+
+    static std::unique_ptr<Grid> constructFromString(const std::string& str, GridMouseEventHandler mouseEventHandler = nullptr)
+    {
+        std::unique_ptr<Grid> result = std::make_unique<Grid>(0, 0, 0, mouseEventHandler);
+        result->fromString(str);
+
+        return result;
     }
 
 private:
