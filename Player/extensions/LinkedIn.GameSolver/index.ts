@@ -8,6 +8,7 @@ import Core from "@extensions/Core";
 import Solver from "./Solver";
 import LogBuilder from "../../src/service/logger/LogBuilder";
 import QueenSolver from "./QueenSolver";
+import DemoQueenSolver from "./DemoQueenSolver";
 
 class LinkedInGameSolverConfig {
     solverPath: string = "../Solver/out/build/x64-Release/Queen-Solver.exe";
@@ -55,9 +56,11 @@ export default class LinkedInGameSolver implements IExtension {
 
     private async startMain(executionContext: IAppExecutionContext): Promise<void> {
         const solver = new Solver(path.resolve(this.config.solverPath));
-        const queenSolver = new QueenSolver(solver);
+        // const queenSolver = new QueenSolver(solver);
+        // await queenSolver.solvePuzzle();
 
-        await queenSolver.solvePuzzle();
+        const demoQueenSolver = new DemoQueenSolver(solver);
+        await demoQueenSolver.solvePuzzle();
 
         /*
         solver.solveQueens("1,1,1,1,1,1,1,1,1,1,4,4,2,2,2,1,6,6,6,4,2,3,1,1,6,7,6,4,4,3,1,1,6,6,6,5,5,3,1,1,6,8,8,8,5,3,3,3,8,8,8,8,5,5,8,8,8,8,8,8,8,8,8,8")
