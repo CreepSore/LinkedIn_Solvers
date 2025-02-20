@@ -17,7 +17,9 @@ private:
         std::unique_ptr<std::vector<Vec2>>& result,
         std::vector<bool>& blockedX,
         std::vector<bool>& blockedY,
-        std::vector<bool>& blockedColor
+        std::vector<bool>& blockedColor,
+        int fromX = 0,
+        int fromY = 0
     );
     std::vector<std::vector<uint8_t>> grid;
     int neededQueens = 0;

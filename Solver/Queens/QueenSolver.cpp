@@ -102,19 +102,28 @@ std::unique_ptr<std::vector<Vec2>> QueenSolver::solve(
     std::unique_ptr<std::vector<Vec2>>& result,
     std::vector<bool>& blockedX,
     std::vector<bool>& blockedY,
-    std::vector<bool>& blockedColor
+    std::vector<bool>& blockedColor,
+    int fromX,
+    int fromY
 )
 {
     const auto size = grid.size();
 
-    for(size_t y = 0; y < size; y++)
+    for(size_t y = fromY; y < size; y++)
     {
         if(blockedY[y])
         {
             continue;
         }
 
-        for(size_t x = 0; x < size; x++)
+        size_t startX = 0;
+
+        if(y == fromY)
+        {
+            startX = fromX;
+        }
+
+        for(size_t x = startX; x < size; x++)
         {
             const auto currentColor = this->grid[y][x] - 1;
 
@@ -168,7 +177,9 @@ std::unique_ptr<std::vector<Vec2>> QueenSolver::solve(
                 nextQueens, 
                 nextBlockedX, 
                 nextBlockedY,
-                nextBlockedColor
+                nextBlockedColor,
+                x,
+                y
             );
 
             if(nextResult != nullptr)
