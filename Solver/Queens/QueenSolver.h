@@ -14,11 +14,10 @@ public:
 
 private:
     std::unique_ptr<std::vector<Vec2>> solve(
-        const std::unique_ptr<std::vector<Vec2>>& result,
+        std::unique_ptr<std::vector<Vec2>>& result,
         std::vector<bool>& blockedX,
         std::vector<bool>& blockedY,
-        std::vector<bool>& blockedColor,
-        int depth = 0 // for debugging purposes
+        std::vector<bool>& blockedColor
     );
     std::vector<std::vector<uint8_t>> grid;
     int neededQueens = 0;

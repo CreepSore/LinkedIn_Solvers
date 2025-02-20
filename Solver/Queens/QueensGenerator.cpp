@@ -43,7 +43,7 @@ void QueensGeneratorMenu::render(Window* window)
     ImGui::Begin("QueensGenerator", &open, ImGuiWindowFlags_NoResize);
 
     renderColorBar();
-    grid.render(GridRenderOptions{ .buttonSize = ImVec2(32, 32), .itemSpacing = ImVec2(1, 1), .clipboardButtons = true });
+    grid.render(GridRenderOptions{ .buttonSize = ImVec2(32, 32), .itemSpacing = ImVec2(1, 1), .clipboardButtons = true, .autofit = true });
 
     ImGui::End();
 

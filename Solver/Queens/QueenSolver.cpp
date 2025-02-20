@@ -32,7 +32,7 @@ std::vector<std::vector<uint8_t>>& QueenSolver::getGrid()
 
 std::unique_ptr<std::vector<Vec2>> QueenSolver::solve()
 {
-    const std::unique_ptr<std::vector<Vec2>> result(new std::vector<Vec2>());
+    std::unique_ptr<std::vector<Vec2>> result(new std::vector<Vec2>());
     std::vector<bool>blockedX{};
     std::vector<bool> blockedY{};
     std::vector<bool> blockedColor{};
@@ -99,11 +99,10 @@ void QueenSolver::setGridFromText(const std::string& text)
 }
 
 std::unique_ptr<std::vector<Vec2>> QueenSolver::solve(
-    const std::unique_ptr<std::vector<Vec2>>& result,
+    std::unique_ptr<std::vector<Vec2>>& result,
     std::vector<bool>& blockedX,
     std::vector<bool>& blockedY,
-    std::vector<bool>& blockedColor,
-    int depth
+    std::vector<bool>& blockedColor
 )
 {
     const auto size = grid.size();
@@ -117,7 +116,14 @@ std::unique_ptr<std::vector<Vec2>> QueenSolver::solve(
 
         for(size_t x = 0; x < size; x++)
         {
-            if(blockedX[x] || blockedColor[this->grid[y][x] - 1])
+            const auto currentColor = this->grid[y][x] - 1;
+
+            if(blockedColor[currentColor])
+            {
+                continue;
+            }
+
+            if(blockedX[x])
             {
                 continue;
             }
@@ -138,42 +144,32 @@ std::unique_ptr<std::vector<Vec2>> QueenSolver::solve(
                 continue;
             }
 
-            Vec2 currentPosition{ static_cast<uint16_t>(x), static_cast<uint16_t>(y) };
-            const auto currentColor = this->grid[currentPosition.y][currentPosition.x];
-
-            std::unique_ptr<std::vector<Vec2>> nextQueens{ new std::vector(*result) };
-            nextQueens->push_back(currentPosition);
-
-            std::vector<bool> nextBlockedX{ blockedX.begin(), blockedX.end() };
-            nextBlockedX[currentPosition.x] = true;
-
-            std::vector<bool> nextBlockedY{ blockedY.begin(), blockedY.end() };
-            nextBlockedY[currentPosition.y] = true;
-
-            std::vector<bool> nextBlockedColor{ blockedColor.begin(), blockedColor.end() };
-            nextBlockedColor[currentColor - 1] = true;
-
-
-            if(nextQueens->size() == this->neededQueens)
+            if(result->size() + 1 == this->neededQueens)
             {
-                bool allFilled = true;
-
-                for(int i = 1; i <= this->neededQueens; i++)
-                {
-                    if(!nextBlockedColor[currentColor - 1])
-                    {
-                        allFilled = false;
-                        break;
-                    }
-                }
-
-                if(allFilled)
-                {
-                    return nextQueens;
-                }
+                // we can modify the result here because we'll
+                // skip out of all subtasks running after returning
+                result->emplace_back(static_cast<uint16_t>(x), static_cast<uint16_t>(y));
+                return std::move(result);
             }
 
-            std::unique_ptr<std::vector<Vec2>> nextResult = this->solve(nextQueens, nextBlockedX, nextBlockedY, nextBlockedColor, depth + 1);
+            std::unique_ptr<std::vector<Vec2>> nextQueens{ new std::vector(*result) };
+            nextQueens->emplace_back(static_cast<uint16_t>(x), static_cast<uint16_t>(y));
+
+            std::vector nextBlockedColor { blockedColor };
+            nextBlockedColor[currentColor] = true;
+
+            std::vector<bool> nextBlockedX{ blockedX.begin(), blockedX.end() };
+            nextBlockedX[x] = true;
+
+            std::vector<bool> nextBlockedY{ blockedY.begin(), blockedY.end() };
+            nextBlockedY[y] = true;
+
+            std::unique_ptr<std::vector<Vec2>> nextResult = this->solve(
+                nextQueens, 
+                nextBlockedX, 
+                nextBlockedY,
+                nextBlockedColor
+            );
 
             if(nextResult != nullptr)
             {
