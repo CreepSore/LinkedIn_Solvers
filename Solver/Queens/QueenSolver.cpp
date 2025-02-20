@@ -33,9 +33,16 @@ std::vector<std::vector<uint8_t>>& QueenSolver::getGrid()
 std::unique_ptr<std::vector<Vec2>> QueenSolver::solve()
 {
     std::unique_ptr<std::vector<Vec2>> result(new std::vector<Vec2>());
+    result->reserve(this->neededQueens);
+
     std::vector<bool>blockedX{};
+    blockedX.reserve(this->grid.size());
+
     std::vector<bool> blockedY{};
+    blockedY.reserve(this->grid.size());
+
     std::vector<bool> blockedColor{};
+    blockedX.reserve(this->neededQueens);
 
     for(size_t i = 0; i < this->grid.size(); i++)
     {
@@ -161,23 +168,16 @@ std::unique_ptr<std::vector<Vec2>> QueenSolver::solve(
                 return std::move(result);
             }
 
-            std::unique_ptr<std::vector<Vec2>> nextQueens{ new std::vector(*result) };
-            nextQueens->emplace_back(static_cast<uint16_t>(x), static_cast<uint16_t>(y));
-
-            std::vector nextBlockedColor { blockedColor };
-            nextBlockedColor[currentColor] = true;
-
-            std::vector<bool> nextBlockedX{ blockedX.begin(), blockedX.end() };
-            nextBlockedX[x] = true;
-
-            std::vector<bool> nextBlockedY{ blockedY.begin(), blockedY.end() };
-            nextBlockedY[y] = true;
+            result->emplace_back(static_cast<uint16_t>(x), static_cast<uint16_t>(y));
+            blockedColor[currentColor] = true;
+            blockedX[x] = true;
+            blockedY[y] = true;
 
             std::unique_ptr<std::vector<Vec2>> nextResult = this->solve(
-                nextQueens, 
-                nextBlockedX, 
-                nextBlockedY,
-                nextBlockedColor,
+                result,
+                blockedX, 
+                blockedY,
+                blockedColor,
                 x,
                 y
             );
@@ -186,6 +186,11 @@ std::unique_ptr<std::vector<Vec2>> QueenSolver::solve(
             {
                 return nextResult;
             }
+
+            result->pop_back();
+            blockedColor[currentColor] = false;
+            blockedX[x] = false;
+            blockedY[y] = false;
         }
     }
 
