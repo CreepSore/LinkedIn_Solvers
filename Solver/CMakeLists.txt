@@ -42,7 +42,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(ImGui-SFML)
 
-add_executable (LinkedInSolver "main.cpp" "main.h" "Queens/QueenSolver.h" "Queens/QueenSolver.cpp" "UI/IRenderable.h" "UI/Window.h" "UI/Window.cpp" "UI/Menu.h" "UI/Menu.cpp" "Queens/QueenSolverMenu.cpp" "Queens/QueenSolverMenu.h" "Tango/TangoSolver.cpp" "Tango/TangoSolver.h" "Shared/Vec2.h" "Tango/TangoSolverMenu.cpp" "Tango/TangoSolverMenu.h" "UI/ImGuiExtensions.h")
+add_executable (LinkedInSolver "main.cpp" "main.h" "Queens/QueenSolver.h" "Queens/QueenSolver.cpp" "UI/IRenderable.h" "UI/Window.h" "UI/Window.cpp" "UI/Menu.h" "UI/Menu.cpp" "Queens/QueenSolverMenu.cpp" "Queens/QueenSolverMenu.h" "Tango/TangoSolver.cpp" "Tango/TangoSolver.h" "Shared/Vec2.h" "Tango/TangoSolverMenu.cpp" "Tango/TangoSolverMenu.h" "UI/ImGuiExtensions.h"  "Queens/QueensGenerator.h" "Queens/QueensGenerator.cpp" "UI/Grid.h")
 
 target_include_directories(
     LinkedInSolver

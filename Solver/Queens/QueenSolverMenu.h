@@ -2,6 +2,7 @@
 #include "imgui.h"
 #include "../UI/IRenderable.h"
 #include "QueenSolver.h"
+#include "../UI/Grid.h"
 #include "SFML/Graphics/RenderWindow.hpp"
 
 class QueenSolverMenu : public IRenderable {
@@ -13,15 +14,15 @@ public:
 private:
     int MAX_GRID_SIZE = 20;
 
-    int gridSize = 0;
     uint8_t lastColor = 0;
-    std::vector<std::vector<uint8_t>> gridValues;
+    std::unique_ptr<Grid<>> grid = nullptr;
     std::unique_ptr<std::vector<Vec2>> result = nullptr;
     void setGridSize(int size);
     void solve();
-    static ImVec4 getColorForNumber(uint8_t color);
+    static ImVec4 getColorForNumber(size_t color);
 
     void toClipboard() const;
     void fromClipboard();
     void fromText(const std::string& text);
+    void attachMouseHandlerToGrid();
 };

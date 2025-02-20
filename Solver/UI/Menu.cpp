@@ -5,10 +5,13 @@
 
 Menu::Menu()
 {
-    queenSolver = std::shared_ptr<QueenSolverMenu>{ new QueenSolverMenu() };
-    tangoSolver = std::shared_ptr<TangoSolverMenu>{ new TangoSolverMenu() };
+    queensGenerator = std::make_shared<QueensGeneratorMenu>();
+    queenSolver = std::make_shared<QueenSolverMenu>();
+    tangoSolver = std::make_shared<TangoSolverMenu>();
+
     subrenderables.push_back(queenSolver);
     subrenderables.push_back(tangoSolver);
+    subrenderables.push_back(queensGenerator);
 }
 
 void Menu::render(Window* window)
@@ -33,6 +36,25 @@ void Menu::render(Window* window)
         tangoSolver->open
             ? tangoSolver->onAttach(window)
             : tangoSolver->onDeattach(window);
+    }
+
+    if (ImGui::Button("QueensGenerator"))
+    {
+        queensGenerator->open = !queensGenerator->open;
+
+        queensGenerator->open
+            ? queensGenerator->onAttach(window)
+            : queensGenerator->onDeattach(window);
+    }
+
+    if (ImGui::Button("ImGui Demo"))
+    {
+        demoOpen = !demoOpen;
+    }
+
+    if(demoOpen)
+    {
+        ImGui::ShowDemoWindow(&demoOpen);
     }
 
     ImGui::End();

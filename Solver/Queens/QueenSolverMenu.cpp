@@ -20,6 +20,7 @@ void QueenSolverMenu::render(Window* window)
     ImGui::SetNextWindowSize(ImGui::GetMainViewport()->WorkSize);
     ImGui::Begin("QueenSolver", &open, ImGuiWindowFlags_NoResize);
 
+    int gridSize = grid->getWidth();
     if (ImGui::SliderInt("Size", &gridSize, 0, MAX_GRID_SIZE))
     {
         setGridSize(gridSize);
@@ -32,7 +33,7 @@ void QueenSolverMenu::render(Window* window)
         solve();
     }
 
-    for(int i = 1; ; i++) {
+    for(size_t i = 1; ; i++) {
         ImVec4 colorButtonColor = getColorForNumber(i);
 
         if(colorButtonColor.x == -1)
@@ -66,111 +67,40 @@ void QueenSolverMenu::render(Window* window)
         toClipboard();
     }
 
-    if (gridSize > 0 && ImGui::BeginTable("QueenGrid", gridSize, ImGuiTableColumnFlags_NoResize))
-    {
-        for (int i = 0; i < gridSize; i++)
-        {
-            ImGui::TableSetupColumn(std::to_string(i).data(), ImGuiTableColumnFlags_WidthFixed);
-        }
-
-        for (int y = 0; y < gridSize; y++)
-        {
-            ImGui::PushID(y);
-            for (int x = 0; x < gridSize; x++)
-            {
-                ImGui::PushID(x);
-                ImGui::TableNextColumn();
-                ImVec4 color = getColorForNumber(gridValues[y][x]);
-
-                std::string text = std::to_string(gridValues[y][x]);
-
-                if(result != nullptr)
-                {
-                    for (auto value : *result)
-                    {
-                        if(value.x == x && value.y == y)
-                        {
-                            color = ImVec4(0, 1, 0, 1);
-                            text = "Q";
-                            break;
-                        }
-                    }
-                }
-
-                if (color.x != -1)
-                {
-                    ImGui::PushStyleColor(ImGuiCol_Button, color);
-                }
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 0, 1));
-
-                if(ImGui::Button(text.data(), {32, 32}))
-                {
-                    gridValues[y][x] += 1;
-                    lastColor = gridValues[y][x];
-                }
-
-                if (ImGui::GetIO().MouseClicked[1] && ImGui::IsItemHovered())
-                {
-                    if (gridValues[y][x] > 0)
-                    {
-                        gridValues[y][x] -= 1;
-                    }
-                    lastColor = gridValues[y][x];
-                }
-
-                if (ImGui::GetIO().MouseDown[2] && ImGui::IsItemHovered())
-                {
-                    gridValues[y][x] = lastColor;
-                }
-
-                if(color.x != -1)
-                {
-                    ImGui::PopStyleColor(1);
-                }
-
-                ImGui::PopStyleColor(1);
-
-                ImGui::PopID();
-            }
-            ImGui::PopID();
-        }
-
-        ImGui::EndTable();
-    }
+    grid->render(ImVec2(32, 32), ImVec2(1, 1));
 
     ImGui::End();
 }
 
 void QueenSolverMenu::setGridSize(int size)
 {
-    gridSize = size;
-    gridValues.clear();
+    grid = std::make_unique<Grid<>>(
+        size, 
+        size,
+        0
+    );
 
-    gridValues.reserve(gridSize);
-    for (int y = 0; y < gridSize; y++)
-    {
-        std::vector<uint8_t> vector {};
-        vector.reserve(gridSize);
-        for (int x = 0; x < gridSize; x++)
-        {
-            vector.push_back(0);
-        }
-        gridValues.push_back(vector);
-    }
+    attachMouseHandlerToGrid();
 }
 
 void QueenSolverMenu::solve()
 {
     QueenSolver solver {};
-    solver.setGrid(gridValues);
+    solver.setGrid(*grid->getResult());
+
     auto start = std::chrono::high_resolution_clock::now();
     result = solver.solve();
     auto end = std::chrono::high_resolution_clock::now();
 
     std::cout << "Queen-Solve-Runtime: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start) << "\n";
+
+    for (const auto& value : *result)
+    {
+        grid->setColor(value.x, value.y, ImVec4(0, 1, 0, 1));
+    }
 }
 
-ImVec4 QueenSolverMenu::getColorForNumber(uint8_t color)
+ImVec4 QueenSolverMenu::getColorForNumber(size_t color)
 {
     switch(color)
     {
@@ -201,20 +131,7 @@ ImVec4 QueenSolverMenu::getColorForNumber(uint8_t color)
 
 void QueenSolverMenu::toClipboard() const
 {
-    std::string result;
-
-    for(int y = 0; y < gridSize; y++)
-    {
-        for (int x = 0; x < gridSize; x++)
-        {
-            if (y != 0 || x != 0) {
-                result.push_back(',');
-            }
-            result.append(std::to_string(gridValues[y][x]));
-        }
-    }
-
-    ImGui::SetClipboardText(result.data());
+    ImGui::SetClipboardText(grid->toString().data());
 }
 
 void QueenSolverMenu::fromClipboard()
@@ -225,41 +142,55 @@ void QueenSolverMenu::fromClipboard()
 
 void QueenSolverMenu::fromText(const std::string& text)
 {
-    std::string num;
-    std::vector<uint8_t> dataVector;
+    grid = Grid<>::fromString(text);
 
-    for (const char c : text)
+    for(size_t x = 0; x < grid->getWidth(); x++)
     {
-        if (c == ',')
+        for(size_t y = 0; y < grid->getHeight(); y++)
         {
-            dataVector.push_back(atoi(num.data()));
-            num.clear();
-            continue;
+            grid->setColor(x, y, getColorForNumber(grid->getValue(x, y)));
         }
-
-        num.push_back(c);
     }
 
-    if (!num.empty())
-    {
-        dataVector.push_back(atoi(num.data()));
-    }
+    attachMouseHandlerToGrid();
+}
 
-    gridSize = static_cast<int>(std::sqrt(dataVector.size()));
-
-    gridValues.clear();
-    gridValues.reserve(gridSize);
-    int offset = 0;
-    for (int y = 0; y < gridSize; y++)
-    {
-        std::vector<uint8_t> vector{};
-        vector.reserve(gridSize);
-
-        for (int x = 0; x < gridSize; x++)
+void QueenSolverMenu::attachMouseHandlerToGrid()
+{
+    grid->setMouseEventHandler([this](
+        auto x,
+        auto y,
+        auto value,
+        auto mouseType,
+        auto eventType
+    ) {
+        if (eventType == GridMouseEvent::DOWN)
         {
-            vector.push_back(dataVector[offset]);
-            offset++;
+            if (mouseType == GridMouseButton::MIDDLE)
+            {
+                grid->setValue(x, y, lastColor);
+                grid->setColor(x, y, getColorForNumber(lastColor));
+            }
         }
-        gridValues.push_back(vector);
-    }
+        else if (eventType == GridMouseEvent::CLICK)
+        {
+            if (mouseType == GridMouseButton::LEFT)
+            {
+                auto& valRef = grid->getValue(x, y);
+                valRef += 1;
+                lastColor = valRef;
+                grid->setColor(x, y, getColorForNumber(valRef));
+            }
+            else if (mouseType == GridMouseButton::RIGHT)
+            {
+                auto& valRef = grid->getValue(x, y);
+                if (valRef > 0)
+                {
+                    valRef -= 1;
+                }
+                lastColor = valRef;
+                grid->setColor(x, y, getColorForNumber(valRef));
+            }
+        }
+    });
 }

@@ -6,9 +6,7 @@
 #include <set>
 #include <utility>
 
-QueenSolver::QueenSolver() {
-
-}
+QueenSolver::QueenSolver() = default;
 
 void QueenSolver::setGrid(std::vector<std::vector<uint8_t>> grid)
 {
