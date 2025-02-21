@@ -5,6 +5,7 @@
 #include <memory>
 #include <cstdint>
 #include <cmath>
+#include <map>
 
 
 class QueenSolver {
@@ -16,6 +17,15 @@ public:
     void setGridFromText(const std::string& text);
 
 private:
+    std::map<int, std::vector<Vec2>> colorFields;
+
+    void runHeuristics(
+        std::vector<Vec2>* queens,
+        std::vector<bool>& blockedX,
+        std::vector<bool>& blockedY,
+        std::vector<bool>& blockedColor
+    );
+
     std::unique_ptr<std::vector<Vec2>> solve(
         std::unique_ptr<std::vector<Vec2>>& result,
         std::vector<bool>& blockedX,

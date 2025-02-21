@@ -17,6 +17,8 @@ void QueenSolver::setGrid(std::vector<std::vector<uint8_t>> grid)
     {
         for(size_t y = 0; y < this->grid[x].size(); y++)
         {
+            this->colorFields[this->grid[x][y]].emplace_back(x, y);
+
             if(this->grid[x][y] > this->neededQueens)
             {
                 this->neededQueens = this->grid[x][y];
@@ -55,6 +57,7 @@ std::unique_ptr<std::vector<Vec2>> QueenSolver::solve()
         blockedColor.push_back(false);
     }
 
+    runHeuristics(result.get(), blockedX, blockedY, blockedColor);
     return this->solve(result, blockedX, blockedY, blockedColor);
 }
 
@@ -103,6 +106,28 @@ void QueenSolver::setGridFromText(const std::string& text)
     // We use std::move so we don't copy any data and don't lose
     // any performance
     setGrid(std::move(grid));
+}
+
+void QueenSolver::runHeuristics(
+    std::vector<Vec2>* queens,
+    std::vector<bool>& blockedX,
+    std::vector<bool>& blockedY,
+    std::vector<bool>& blockedColor
+)
+{
+    for (std::pair<const int, std::vector<Vec2>>& colorField : colorFields)
+    {
+        if(colorField.second.size() == 1)
+        {
+            const Vec2 pos = colorField.second[0];
+            queens->push_back(pos);
+            blockedX[pos.x] = true;
+            blockedY[pos.y] = true;
+            blockedColor[grid[pos.y][pos.x] - 1] = true;
+        }
+    }
+
+    // TODO: Pre-Calculate Single-Line colors?
 }
 
 std::unique_ptr<std::vector<Vec2>> QueenSolver::solve(
