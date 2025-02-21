@@ -1,9 +1,9 @@
 #pragma once
 
-#include <map>
 #include <memory>
 #include "../UI/IRenderable.h"
 #include "../UI/Grid.h"
+
 
 class QueensGenerator {
 public:

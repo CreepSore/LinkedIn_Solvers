@@ -2,6 +2,8 @@
 #include <vector>
 #include <format>
 #include "../Shared/Vec2.h"
+#include <memory>
+
 
 
 class QueenSolver {

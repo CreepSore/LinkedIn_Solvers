@@ -4,6 +4,8 @@
 #include "QueenSolver.h"
 #include "../UI/Grid.h"
 #include "SFML/Graphics/RenderWindow.hpp"
+#include <memory>
+
 
 class QueenSolverMenu : public IRenderable {
 public:

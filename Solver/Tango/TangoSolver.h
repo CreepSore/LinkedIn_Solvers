@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 #include <format>
+#include <memory>
+
 #include "../Shared/Vec2.h"
 
 class TangoSolver {

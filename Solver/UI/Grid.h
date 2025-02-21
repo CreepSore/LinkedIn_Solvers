@@ -2,6 +2,7 @@
 #include <functional>
 #include <sstream>
 #include <string>
+#include <cmath>
 
 #include "imgui.h"
 #include "ImGuiExtensions.h"

@@ -2,6 +2,8 @@
 #include "imgui.h"
 #include "../UI/IRenderable.h"
 #include "TangoSolver.h"
+#include <memory>
+
 #include "SFML/Graphics/RenderWindow.hpp"
 
 class TangoSolverMenu : public IRenderable {

@@ -1,7 +1,5 @@
 #include "QueensGenerator.h"
 
-#include <iostream>
-
 #include "imgui.h"
 
 QueensGeneratorMenu::QueensGeneratorMenu()
