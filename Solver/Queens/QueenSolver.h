@@ -4,6 +4,7 @@
 #include "../Shared/Vec2.h"
 #include <memory>
 #include <cstdint>
+#include <cmath>
 
 
 class QueenSolver {
