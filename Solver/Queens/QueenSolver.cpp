@@ -17,7 +17,7 @@ void QueenSolver::setGrid(std::vector<std::vector<uint8_t>> grid)
     {
         for(size_t y = 0; y < this->grid[x].size(); y++)
         {
-            this->colorFields[this->grid[x][y]].emplace_back(x, y);
+            this->colorFields[this->grid[y][x] - 1].emplace_back(x, y);
 
             if(this->grid[x][y] > this->neededQueens)
             {
@@ -120,7 +120,7 @@ void QueenSolver::runHeuristics(
         if(colorField.second.size() == 1)
         {
             const Vec2 pos = colorField.second[0];
-            queens->push_back(pos);
+            queens->emplace_back(pos);
             blockedX[pos.x] = true;
             blockedY[pos.y] = true;
             blockedColor[grid[pos.y][pos.x] - 1] = true;
