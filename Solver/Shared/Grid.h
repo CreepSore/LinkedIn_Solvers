@@ -43,6 +43,7 @@ struct Grid {
     )> GridMouseEventHandler;
 
     std::vector<std::vector<ValueType>> rawGrid;
+    std::unique_ptr<Grid<ImVec4, SizeType>> colorGrid = nullptr;
     ValueType defaultValue;
     bool hideLabels = false;
 
@@ -102,6 +103,11 @@ struct Grid {
 
     void reset()
     {
+        if(colorGrid != nullptr)
+        {
+            colorGrid->reset();
+        }
+
         rawGrid.clear();
         rawGrid.reserve(height);
 
@@ -360,7 +366,7 @@ struct Grid {
         }
 
         this->width = width;
-        this->height = row.size();
+        this->height = grid.size();
         this->rawGrid = grid;
     }
 
@@ -376,7 +382,6 @@ private:
     SizeType width = 0;
     SizeType height = 0;
 
-    std::unique_ptr<Grid<ImVec4, SizeType>> colorGrid = nullptr;
     GridMouseEventHandler mouseEventHandler = nullptr;
 
     void fireClickHandlers(SizeType x, SizeType y, ValueType& value) const

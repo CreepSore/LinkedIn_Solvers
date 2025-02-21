@@ -4,6 +4,27 @@
 
 #include "imgui.h"
 
+QueenSolverMenu::QueenSolverMenu()
+{
+    rndEngine = std::default_random_engine(rnd());
+
+    colors.emplace_back(187.0 / 255, 163.0 / 255, 225.0 / 255, 1.0);
+    colors.emplace_back(254.0 / 255, 202.0 / 255, 145.0 / 255, 1.0);
+    colors.emplace_back(150.0 / 255, 189.0 / 255, 254.0 / 255, 1.0);
+    colors.emplace_back(223.0 / 255, 223.0 / 255, 223.0 / 255, 1.0);
+    colors.emplace_back(254.0 / 255, 123.0 / 255, 95.0 / 255, 1.0);
+    colors.emplace_back(230.0 / 255, 243.0 / 255, 137.0 / 255, 1.0);
+    colors.emplace_back(163.0 / 255, 210.0 / 255, 216.0 / 255, 1.0);
+    colors.emplace_back(223.0 / 255, 160.0 / 255, 191.0 / 255, 1.0);
+    colors.emplace_back(185.0 / 255, 178.0 / 255, 159.0 / 255, 1.0);
+    colors.emplace_back(179.0 / 255, 223.0 / 255, 160.0 / 255, 1.0);
+
+    for(int i = 0; i < 255; i++)
+    {
+        colors.emplace_back(getRandom(), getRandom(), getRandom(), 1.0);
+    }
+}
+
 void QueenSolverMenu::onAttach(Window* window)
 {
     setGridSize(10);
@@ -33,7 +54,7 @@ void QueenSolverMenu::render(Window* window)
         solve();
     }
 
-    for(size_t i = 1; ; i++) {
+    for(size_t i = 1; i < 20; i++) {
         ImVec4 colorButtonColor = getColorForNumber(i);
 
         if(colorButtonColor.x == -1)
@@ -105,31 +126,7 @@ void QueenSolverMenu::solve()
 
 ImVec4 QueenSolverMenu::getColorForNumber(size_t color)
 {
-    switch(color)
-    {
-    case 1:
-        return { 187.0 / 255, 163.0 / 255, 225.0 / 255, 1.0 };
-    case 2:
-        return { 254.0 / 255, 202.0 / 255, 145.0 / 255, 1.0 };
-    case 3:
-        return { 150.0 / 255, 189.0 / 255, 254.0 / 255, 1.0 };
-    case 4:
-        return { 223.0 / 255, 223.0 / 255, 223.0 / 255, 1.0 };
-    case 5:
-        return { 254.0 / 255, 123.0 / 255, 95.0 / 255, 1.0 };
-    case 6:
-        return { 230.0 / 255, 243.0 / 255, 137.0 / 255, 1.0 };
-    case 7:
-        return { 163.0 / 255, 210.0 / 255, 216.0 / 255, 1.0 };
-    case 8:
-        return { 223.0 / 255, 160.0 / 255, 191.0 / 255, 1.0 };
-    case 9:
-        return { 185.0 / 255, 178.0 / 255, 159.0 / 255, 1.0 };
-    case 10:
-        return { 179.0 / 255, 223.0 / 255, 160.0 / 255, 1.0 };
-    default:
-        return { -1, -1, -1, -1 };
-    }
+    return colors[color];
 }
 
 void QueenSolverMenu::toClipboard() const
@@ -196,4 +193,9 @@ void QueenSolverMenu::attachMouseHandlerToGrid()
             }
         }
     });
+}
+
+double QueenSolverMenu::getRandom()
+{
+    return rndDistribution(rndEngine);
 }
