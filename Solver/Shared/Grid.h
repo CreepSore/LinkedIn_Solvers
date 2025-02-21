@@ -3,9 +3,10 @@
 #include <sstream>
 #include <string>
 #include <cmath>
+#include <cstdint>
 
 #include "imgui.h"
-#include "ImGuiExtensions.h"
+#include "../UI/ImGuiExtensions.h"
 
 enum class GridMouseButton : uint8_t
 {

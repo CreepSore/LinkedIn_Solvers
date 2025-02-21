@@ -2,6 +2,7 @@
 #include <vector>
 #include <format>
 #include <memory>
+#include <cstdint>
 
 #include "../Shared/Vec2.h"
 

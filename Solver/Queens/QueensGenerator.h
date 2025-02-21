@@ -2,7 +2,7 @@
 
 #include <memory>
 #include "../UI/IRenderable.h"
-#include "../UI/Grid.h"
+#include "../Shared/Grid.h"
 
 
 class QueensGenerator {

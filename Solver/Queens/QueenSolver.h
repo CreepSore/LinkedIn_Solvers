@@ -3,7 +3,7 @@
 #include <format>
 #include "../Shared/Vec2.h"
 #include <memory>
-
+#include <cstdint>
 
 
 class QueenSolver {

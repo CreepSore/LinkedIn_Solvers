@@ -1,10 +1,12 @@
 #pragma once
+#include <memory>
+#include <cstdint>
 #include "imgui.h"
+
 #include "../UI/IRenderable.h"
 #include "QueenSolver.h"
-#include "../UI/Grid.h"
+#include "../Shared/Grid.h"
 #include "SFML/Graphics/RenderWindow.hpp"
-#include <memory>
 
 
 class QueenSolverMenu : public IRenderable {
