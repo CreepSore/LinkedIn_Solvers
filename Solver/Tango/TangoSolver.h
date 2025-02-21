@@ -3,6 +3,7 @@
 #include <format>
 #include <memory>
 #include <cstdint>
+#include <cmath>
 
 #include "../Shared/Vec2.h"
 
