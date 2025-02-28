@@ -4,8 +4,10 @@
 #include <string>
 #include <cmath>
 #include <cstdint>
+#include <map>
 
 #include "imgui.h"
+#include "Vec2.h"
 #include "../UI/ImGuiExtensions.h"
 
 enum class GridMouseButton : uint8_t
@@ -29,6 +31,7 @@ struct GridRenderOptions
     ImVec2 itemSpacing = ImVec2(-1, -1);
     bool clipboardButtons = false;
     bool autofit = false;
+    bool renderAsChar = false;
 };
 
 template <typename ValueType = uint8_t, typename SizeType = size_t>
@@ -44,6 +47,7 @@ struct Grid {
 
     std::vector<std::vector<ValueType>> rawGrid;
     std::unique_ptr<Grid<ImVec4, SizeType>> colorGrid = nullptr;
+    std::map<Vec2, ImVec2> buttonSize;
     ValueType defaultValue;
     bool hideLabels = false;
 
@@ -179,7 +183,6 @@ struct Grid {
             ? renderOptions.buttonSize
             : ImVec2(32, 32);
 
-
         ImVec2 vecItemSpacing = renderOptions.itemSpacing.x != -1
             ? renderOptions.itemSpacing
             : style.ItemSpacing;
@@ -207,13 +210,29 @@ struct Grid {
             ImGui::NewLine();
             for (SizeType x = 0; x < width; ++x)
             {
+                ImGui::TableNextColumn();
                 ImGui::PushID(x);
+
                 ValueType value = rawGrid[y][x];
-                const std::string label = !hideLabels
+
+                std::string label = !hideLabels
                     ? std::to_string(value)
                     : std::string(" ");
 
+                if(!hideLabels && renderOptions.renderAsChar)
+                {
+                    label.clear();
+                    label.push_back(value);
+                }
+
+                Vec2 posVec = Vec2(x, y);
                 ImVec4 buttonColor = ImVec4(-1, -1, -1, -1);
+                ImVec2 btnSize = vecButtonSize;
+
+                if(buttonSize.contains(posVec))
+                {
+                    btnSize = buttonSize.at(posVec);
+                }
 
                 if (mouseEventHandler == nullptr)
                 {
@@ -226,18 +245,17 @@ struct Grid {
 
                     if(buttonColor.x != -1)
                     {
-                        ImGui::Extension::ColoredButton(label.data(), buttonColor, vecButtonSize);
+                        ImGui::Extension::ColoredButton(label.data(), buttonColor, btnSize);
                     }
                 }
 
                 if(buttonColor.x == -1)
                 {
-                    ImGui::Button(label.data(), vecButtonSize);
+                    ImGui::Button(label.data(), btnSize);
                 }
 
                 fireClickHandlers(x, y, value);
                 fireDownHandlers(x, y, value);
-
 
                 if (mouseEventHandler == nullptr)
                 {

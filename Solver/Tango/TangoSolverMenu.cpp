@@ -7,7 +7,7 @@
 
 void TangoSolverMenu::onAttach(Window* window)
 {
-    lastValue = TangoSolver::Type::NONE;
+    lastValue = TangoSolver::Type::FIELD_TYPE_NONE;
     setGridSize(10);
 }
 
@@ -34,21 +34,21 @@ void TangoSolverMenu::render(Window* window)
         solve();
     }
 
-    if(ImGui::Extension::ColoredButton("None", getColorForValue(TangoSolver::Type::NONE)))
+    if(ImGui::Extension::ColoredButton("None", getColorForValue(TangoSolver::Type::FIELD_TYPE_NONE)))
     {
-        lastValue = TangoSolver::Type::NONE;
+        lastValue = TangoSolver::Type::FIELD_TYPE_NONE;
     }
     ImGui::SameLine();
 
-    if (ImGui::Extension::ColoredButton("Sun", getColorForValue(TangoSolver::Type::SUN)))
+    if (ImGui::Extension::ColoredButton("Sun", getColorForValue(TangoSolver::Type::FIELD_TYPE_SUN)))
     {
-        lastValue = TangoSolver::Type::SUN;
+        lastValue = TangoSolver::Type::FIELD_TYPE_SUN;
     }
 
     ImGui::SameLine();
-    if (ImGui::Extension::ColoredButton("Moon", getColorForValue(TangoSolver::Type::MOON)))
+    if (ImGui::Extension::ColoredButton("Moon", getColorForValue(TangoSolver::Type::FIELD_TYPE_MOON)))
     {
-        lastValue = TangoSolver::Type::MOON;
+        lastValue = TangoSolver::Type::FIELD_TYPE_MOON;
     }
 
     if(ImGui::Button("<-- From Clipboard"))
@@ -63,60 +63,13 @@ void TangoSolverMenu::render(Window* window)
         toClipboard();
     }
 
-    if (gridSize > 0 && ImGui::BeginTable("TangoGrid", gridSize, ImGuiTableColumnFlags_NoResize))
+    if(result != nullptr)
     {
-        for (int i = 0; i < gridSize; i++)
-        {
-            ImGui::TableSetupColumn(std::to_string(i).data(), ImGuiTableColumnFlags_WidthFixed);
-        }
-
-        for (int y = 0; y < gridSize; y++)
-        {
-            ImGui::PushID(y);
-            for (int x = 0; x < gridSize; x++)
-            {
-                ImGui::PushID(x);
-                ImGui::TableNextColumn();
-                ImVec4 color = result != nullptr
-                    ? getColorForValue((*result)[y][x])
-                    : getColorForValue(gridValues[y][x]);
-
-                std::string text = std::to_string(gridValues[y][x]);
-
-                if(ImGui::Extension::ColoredButton("", color, {32, 32}))
-                {
-                    switch(gridValues[y][x])
-                    {
-                    case TangoSolver::Type::NONE:
-                        gridValues[y][x] = TangoSolver::Type::SUN;
-                        break;
-
-                    case TangoSolver::Type::SUN:
-                        gridValues[y][x] = TangoSolver::Type::MOON;
-                        break;
-
-                    case TangoSolver::Type::MOON:
-                        gridValues[y][x] = TangoSolver::Type::NONE;
-                        break;
-
-                    default:
-                        break;
-                    }
-
-                    lastValue = gridValues[y][x];
-                }
-
-                if (ImGui::GetIO().MouseDown[2] && ImGui::IsItemHovered())
-                {
-                    gridValues[y][x] = lastValue;
-                }
-
-                ImGui::PopID();
-            }
-            ImGui::PopID();
-        }
-
-        ImGui::EndTable();
+        grid->render({ .itemSpacing = ImVec2(0, 0), .renderAsChar = true });
+    }
+    else if(grid != nullptr)
+    {
+        grid->render({.itemSpacing = ImVec2(0, 0), .renderAsChar = true});
     }
 
     ImGui::End();
@@ -124,28 +77,42 @@ void TangoSolverMenu::render(Window* window)
 
 void TangoSolverMenu::setGridSize(int size)
 {
-    gridSize = size;
-    gridValues.clear();
-
-    gridValues.reserve(gridSize);
-    for (int y = 0; y < gridSize; y++)
+    if(size == 0)
     {
-        std::vector<uint8_t> vector {};
-        vector.reserve(gridSize);
-        for (int x = 0; x < gridSize; x++)
-        {
-            vector.push_back(TangoSolver::Type::NONE);
-        }
-        gridValues.push_back(vector);
+        grid = nullptr;
+        return;
     }
+
+    gridSize = size;
+    grid = std::make_unique<Grid<char>>((size * 2) - 1, (size * 2) - 1, TangoSolver::Type::FIELD_TYPE_NONE, [this](
+        size_t x,
+        size_t y,
+        char value,
+        GridMouseButton clickType,
+        GridMouseEvent eventType
+    )
+    {
+        gridMouseHandler(x, y, value, clickType, eventType);
+    });
+
+    initializeGrid();
 }
 
 void TangoSolverMenu::solve()
 {
     TangoSolver solver {};
-    solver.setGrid(gridValues);
+    solver.setGrid(grid.get());
     auto start = std::chrono::high_resolution_clock::now();
     result = solver.solve();
+
+    for(size_t y = 0; y < result->getHeight(); y += 2)
+    {
+        for (size_t x = 0; x < result->getWidth(); x += 2)
+        {
+            grid->setColor(x, y, getColorForValue(result->getValue(x, y)));
+        }
+    }
+
     auto end = std::chrono::high_resolution_clock::now();
 
     std::cout << "Tango-Solve-Runtime: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start) << "\n";
@@ -155,11 +122,11 @@ ImVec4 TangoSolverMenu::getColorForValue(uint8_t color)
 {
     switch(color)
     {
-    case TangoSolver::Type::SUN:
+    case TangoSolver::Type::FIELD_TYPE_SUN:
         return { 255.0 / 255, 179.0 / 255, 30.0 / 255, 1.0 };
-    case TangoSolver::Type::MOON:
+    case TangoSolver::Type::FIELD_TYPE_MOON:
         return { 76.0 / 255, 140.0 / 255, 230.0 / 255, 1.0 };
-    case TangoSolver::Type::NONE:
+    case TangoSolver::Type::FIELD_TYPE_NONE:
         return { 50.0 / 255,  50.0 / 255,  50.0 / 255, 1.0 };
     default:
         return { -1, -1, -1, -1 };
@@ -168,17 +135,7 @@ ImVec4 TangoSolverMenu::getColorForValue(uint8_t color)
 
 void TangoSolverMenu::toClipboard() const
 {
-    std::string result;
-
-    for(int y = 0; y < gridSize; y++)
-    {
-        for (int x = 0; x < gridSize; x++)
-        {
-            result.push_back(gridValues[y][x]);
-        }
-    }
-
-    ImGui::SetClipboardText(result.data());
+    ImGui::SetClipboardText(grid->toString().data());
 }
 
 void TangoSolverMenu::fromClipboard()
@@ -189,23 +146,105 @@ void TangoSolverMenu::fromClipboard()
 
 void TangoSolverMenu::fromText(const std::string& text)
 {
-    std::string num;
-
-    gridSize = static_cast<int>(std::sqrt(text.size()));
-
-    gridValues.clear();
-    gridValues.reserve(gridSize);
-    int offset = 0;
-    for (int x = 0; x < gridSize; x++)
+    grid = Grid<char>::constructFromString(text, [this](
+        size_t x,
+        size_t y,
+        char value,
+        GridMouseButton clickType,
+        GridMouseEvent eventType
+    )
     {
-        std::vector<uint8_t> vector{};
-        vector.reserve(gridSize);
+        gridMouseHandler(x, y, value, clickType, eventType);
+    });
+    grid->defaultValue = TangoSolver::Type::FIELD_TYPE_NONE;
 
-        for (int y = 0; y < gridSize; y++)
+    initializeGrid();
+}
+
+void TangoSolverMenu::initializeGrid()
+{
+    for (size_t y = 0; y < grid->getHeight(); y += 2)
+    {
+        for (size_t x = 0; x < grid->getWidth(); x += 2)
         {
-            vector.push_back(text[offset]);
-            offset++;
+            grid->setColor(x, y, getColorForValue(grid->getValue(x, y)));
         }
-        gridValues.push_back(vector);
+    }
+
+    for (size_t x = 1; x < grid->getWidth(); x += 2)
+    {
+        for (size_t y = 0; y < grid->getHeight(); y++)
+        {
+            grid->buttonSize.insert_or_assign(Vec2(x, y), ImVec2(16, 32));
+            grid->setColor(x, y, ImVec4(0.1, 0.1, 0.1, 1));
+        }
+    }
+
+    for (size_t y = 1; y < grid->getHeight(); y += 2)
+    {
+        for (size_t x = 0; x < grid->getWidth(); x++)
+        {
+            grid->buttonSize.insert_or_assign(Vec2(x, y), ImVec2(32, 16));
+            grid->setColor(x, y, ImVec4(0.1, 0.1, 0.1, 1));
+        }
+    }
+
+    for (size_t y = 1; y < grid->getHeight(); y += 2)
+    {
+        for (size_t x = 1; x < grid->getWidth(); x += 2)
+        {
+            grid->setColor(x, y, ImVec4(0, 0, 0, 0));
+            grid->buttonSize.insert_or_assign(Vec2(x, y), ImVec2(16, 16));
+        }
+    }
+}
+
+void TangoSolverMenu::gridMouseHandler(
+    size_t x,
+    size_t y,
+    char value,
+    GridMouseButton clickType,
+    GridMouseEvent eventType
+)
+{
+    if (eventType != GridMouseEvent::CLICK)
+    {
+        return;
+    }
+
+    if (x % 2 == 0 && y % 2 == 0)
+    {
+        if (value == TangoSolver::Type::FIELD_TYPE_NONE)
+        {
+            grid->setValue(x, y, TangoSolver::Type::FIELD_TYPE_SUN);
+        }
+        else if (value == TangoSolver::Type::FIELD_TYPE_SUN)
+        {
+            grid->setValue(x, y, TangoSolver::Type::FIELD_TYPE_MOON);
+        }
+        else if (value == TangoSolver::Type::FIELD_TYPE_MOON)
+        {
+            grid->setValue(x, y, TangoSolver::Type::FIELD_TYPE_NONE);
+        }
+
+        grid->setColor(x, y, getColorForValue(grid->getValue(x, y)));
+
+        return;
+    }
+
+    if (x % 2 == 0 || y % 2 == 0)
+    {
+        if (value == ' ')
+        {
+            grid->setValue(x, y, 'X');
+        }
+        else if (value == 'X')
+        {
+            grid->setValue(x, y, '=');
+        }
+        else if (value == '=')
+        {
+            grid->setValue(x, y, ' ');
+        }
     }
 }

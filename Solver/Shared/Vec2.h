@@ -23,6 +23,11 @@ struct Vec2
 
     bool operator<(const Vec2& v2) const noexcept
     {
-        return this->hash - v2.hash < 0;
+        return x < v2.x || (x == v2.x && y < v2.y);
+    }
+
+    bool operator==(const Vec2& v2) const noexcept
+    {
+        return this->hash == v2.hash;
     }
 };

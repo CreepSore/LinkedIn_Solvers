@@ -140,7 +140,7 @@ void QueensGenerator::generateColors(Grid<uint8_t, int32_t>& grid)
         }
         else
         {
-            generateColorsRandomWalk(grid, pos, colorId, grid.getWidth());
+            generateColorsRandomWalk(grid, pos, colorId, grid.getWidth() * 0.25);
         }
         colorId++;
     }

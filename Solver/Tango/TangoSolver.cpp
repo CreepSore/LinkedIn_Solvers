@@ -1,326 +1,517 @@
 #include "TangoSolver.h"
 
-#include <algorithm>
-#include <map>
-#include <set>
 #include <utility>
 
 TangoSolver::TangoSolver() {
 
 }
 
-void TangoSolver::setGrid(std::vector<std::vector<uint8_t>> grid)
+void TangoSolver::setGrid(Grid<char>* grid)
 {
     this->grid = grid;
 }
 
-std::vector<std::vector<uint8_t>>& TangoSolver::getGrid()
+Grid<char>* TangoSolver::solve()
 {
-    return this->grid;
+    const auto width = grid->getWidth();
+    const auto height = grid->getHeight();
+
+    countX = std::make_unique<std::vector<std::array<int, 2>>>();
+    countX->reserve(width);
+
+    countY = std::make_unique<std::vector<std::array<int, 2>>>();
+    countY->reserve(height);
+
+    for (size_t i = 0; i < width; i++)
+    {
+        countX->push_back(std::array<int, 2>({ 0, 0 }));
+        countY->push_back(std::array<int, 2>({ 0, 0 }));
+    }
+
+    for (size_t y = 0; y < height; y += 2)
+    {
+        for (size_t x = 0; x < width; x += 2)
+        {
+            const auto value = grid->getValue(x, y);
+
+            if (value == FIELD_TYPE_SUN)
+            {
+                (*countX)[x][0] += 1;
+                (*countY)[y][0] += 1;
+            }
+            else if (value == FIELD_TYPE_MOON)
+            {
+                (*countX)[x][1] += 1;
+                (*countY)[y][1] += 1;
+            }
+        }
+    }
+
+    bool run = true;
+    while(run)
+    {
+        run = false;
+
+        for(size_t y = 0; y < height; y += 2)
+        {
+            for(size_t x = 0; x < width; x += 2)
+            {
+                auto value = grid->getValue(x, y);
+
+                if (value != FIELD_TYPE_NONE)
+                {
+                    continue;
+                }
+
+                if(!runHeuristics(x, y))
+                {
+                    continue;
+                }
+
+                value = grid->getValue(x, y);
+                run = true;
+
+                if (value == FIELD_TYPE_SUN)
+                {
+                    (*countX)[x][0] += 1;
+                    (*countY)[y][0] += 1;
+                }
+                else if (value == FIELD_TYPE_MOON)
+                {
+                    (*countX)[x][1] += 1;
+                    (*countY)[y][1] += 1;
+                }
+            }
+        }
+    }
+
+    return solve(0, 0);
 }
 
-std::unique_ptr<std::vector<std::vector<uint8_t>>> TangoSolver::solve()
+Grid<char>* TangoSolver::solve(const size_t fromX, const size_t fromY)
 {
-    std::unique_ptr result(std::make_unique<std::vector<std::vector<uint8_t>>>());
-    const size_t size = this->grid.size();
+    size_t currentFromX = fromX;
 
-    result->reserve(size);
-    for(size_t i = 0; i < size; i++)
+    for (size_t y = fromY; y < grid->getHeight(); y += 2)
     {
-        std::vector<uint8_t> row;
-        row.reserve(size);
-        for(size_t j = 0; j < size; j++)
+        for (size_t x = currentFromX; x < grid->getWidth(); x += 2)
         {
-            row.push_back(this->grid[i][j]);
-        }
+            const auto currentValue = grid->getValue(x, y);
 
-        result->push_back(row);
-    }
-
-    bool retry = true;
-    while(retry)
-    {
-        retry = false;
-        for(uint8_t y = 0; y < size; y++)
-        {
-            for (uint8_t x = 0; x < size; x++)
+            if(currentValue != FIELD_TYPE_NONE)
             {
-                auto heuristic = heuristics(result, x, y);
-                if (heuristic != NONE) {
-                    retry = true;
-                    (*result)[y][x] = heuristic;
-                }
-            }
-        }
-    }
+                const char top = y > 0
+                    ? grid->getValue(x, y - 2)
+                    : INVALID;
 
-    return this->solve(result);
-}
+                const char left = x > 0
+                    ? grid->getValue(x - 2, y)
+                    : INVALID;
 
-void TangoSolver::setGridFromText(const std::string& text)
-{
-    int gridSize = 0;
-    std::string num;
-    std::vector<uint8_t> dataVector;
+                const auto topTop = y >= 4
+                    ? grid->getValue(x, y - 4)
+                    : INVALID;
 
-    for (const char c : text)
-    {
-        if (c == ',')
-        {
-            dataVector.push_back(atoi(num.data()));
-            num.clear();
-            continue;
-        }
+                const auto leftLeft = x >= 4
+                    ? grid->getValue(x - 4, y)
+                    : INVALID;
 
-        num.push_back(c);
-    }
-
-    if (!num.empty())
-    {
-        dataVector.push_back(atoi(num.data()));
-    }
-
-    gridSize = static_cast<int>(std::sqrt(dataVector.size()));
-
-    grid.clear();
-    grid.reserve(gridSize);
-    int offset = 0;
-    for (int y = 0; y < gridSize; y++)
-    {
-        std::vector<uint8_t> vector{};
-        vector.reserve(gridSize);
-
-        for (int x = 0; x < gridSize; x++)
-        {
-            vector.push_back(dataVector[offset]);
-            offset++;
-        }
-        grid.push_back(vector);
-    }
-
-    // Ew... but doesn't matter:
-    // We use std::move so we don't copy any data and don't lose
-    // any performance
-    setGrid(std::move(grid));
-}
-
-std::unique_ptr<std::vector<std::vector<uint8_t>>> TangoSolver::solve(std::unique_ptr<std::vector<std::vector<uint8_t>>>& grid)
-{
-    const auto size = grid->size();
-
-    const auto checkGrid = [](const std::unique_ptr<std::vector<std::vector<uint8_t>>>& grid) {
-        const auto checkRow = [](const std::unique_ptr<std::vector<std::vector<uint8_t>>>& grid, size_t rownum) {
-            const size_t size = grid->size();
-            bool noMaxConcurrent = true;
-            std::map<Type, uint8_t> total {
-                {NONE, 0},
-                {MOON, 0},
-                {SUN, 0}
-            };
-
-            for(size_t i = 2; i < size; i++)
-            {
-                if(i == 2)
+                if (top != INVALID && top == topTop && top == currentValue)
                 {
-                    for(size_t j = 0; j < i; j++)
-                    {
-                        uint8_t value = (*grid)[rownum][j];
-                        total[static_cast<Type>(value)] += 1;
-                    }
+                    return nullptr;
                 }
 
-                uint8_t value = (*grid)[rownum][i];
-                total[static_cast<Type>(value)] += 1;
-
-                if((*grid)[rownum][i] != NONE && (*grid)[rownum][i] == (*grid)[rownum][i-1] && (*grid)[rownum][i] == (*grid)[rownum][i-2])
+                if(left != INVALID && left == leftLeft && left == currentValue)
                 {
-                    noMaxConcurrent = false;
+                    return nullptr;
                 }
 
-                if (!noMaxConcurrent && total[NONE] > 0)
-                {
-                    break;
-                }
+                continue;
             }
 
-            return std::make_tuple(total[MOON] == total[SUN], noMaxConcurrent);
-        };
-
-        const auto checkColumn = [](const std::unique_ptr<std::vector<std::vector<uint8_t>>>& grid, size_t colnum) {
-            const size_t size = grid->size();
-            bool noMaxConcurrent = true;
-            std::map<Type, uint8_t> total{
-                {NONE, 0},
-                {MOON, 0},
-                {SUN, 0}
-            };
-
-            for (size_t i = 2; i < size; i++)
+            switch (checkIsValid())
             {
-                if (i == 2)
-                {
-                    for (size_t j = 0; j < i; j++)
-                    {
-                        uint8_t value = (*grid)[j][colnum];
-                        total[static_cast<Type>(value)] += 1;
-                    }
-                }
-
-                uint8_t value = (*grid)[i][colnum];
-                total[static_cast<Type>(value)] += 1;
-
-                if ((*grid)[i][colnum] != NONE && (*grid)[i][colnum] == (*grid)[i - 1][colnum] && (*grid)[i][colnum] == (*grid)[i - 2][colnum])
-                {
-                    noMaxConcurrent = false;
-                }
-
-                if(!noMaxConcurrent && total[NONE] > 0)
-                {
-                    break;
-                }
-            }
-
-            return std::make_tuple(total[MOON] == total[SUN], noMaxConcurrent);
-        };
-
-        const size_t size = grid->size();
-        auto valid = std::make_tuple(true, true);
-
-        for(size_t i = 0; i < size; i++)
-        {
-            auto rowCheck = checkRow(grid, i);
-            auto colCheck = checkColumn(grid, i);
-
-            if(!std::get<0>(rowCheck) || !std::get<0>(colCheck))
-            {
-                std::get<0>(valid) = false;
-            }
-
-            if (!std::get<1>(rowCheck) || !std::get<1>(colCheck))
-            {
-                std::get<1>(valid) = false;
-            }
-
-            if(!std::get<0>(valid) && !std::get<1>(valid))
-            {
+            case VALID:
                 break;
+
+            case COMPLETED:
+                return grid;
+
+            case CANCEL:
+                return nullptr;
             }
-        }
 
-        return valid;
-    };
-
-    auto gridCheck = checkGrid(grid);
-
-    if(std::get<0>(gridCheck) && std::get<1>(gridCheck))
-    {
-        return std::move(grid);
-    }
-
-    if(!std::get<1>(gridCheck))
-    {
-        return nullptr;
-    }
-
-    for (size_t y = 0; y < size; y++)
-    {
-        for (size_t x = 0; x < size; x++)
-        {
-            Type value = static_cast<Type>((*grid)[y][x]);
-            if(value != NONE)
+            if (runConstraintHeuristics(x, y, false))
             {
+                const auto newvalue = grid->getValue(x, y);
+                if(newvalue == FIELD_TYPE_SUN)
+                {
+                    (*countX)[x][0] += 1;
+                    (*countY)[y][0] += 1;
+                }
+                else
+                {
+                    (*countX)[x][1] += 1;
+                    (*countY)[y][1] += 1;
+                }
+
+                auto resultHeuristics = solve(x, y);
+                if(resultHeuristics)
+                {
+                    return resultHeuristics;
+                }
+
+                if (newvalue == FIELD_TYPE_SUN)
+                {
+                    (*countX)[x][0] -= 1;
+                    (*countY)[y][0] -= 1;
+                }
+                else
+                {
+                    (*countX)[x][1] -= 1;
+                    (*countY)[y][1] -= 1;
+                }
+                grid->setValue(x, y, currentValue);
+
                 continue;
             }
 
-            std::unique_ptr<std::vector<std::vector<uint8_t>>> newGrid{ new std::vector<std::vector<uint8_t>>() };
-            newGrid->reserve(size);
-            for(size_t y2 = 0; y2 < size; y2++)
+            grid->setValue(x, y, FIELD_TYPE_SUN);
+            (*countX)[x][0] += 1;
+            (*countY)[y][0] += 1;
+            auto resultSun = solve(x, y);
+            if(resultSun != nullptr)
             {
-                std::vector<uint8_t> row;
-                row.reserve(size);
-                for(size_t x2 = 0; x2 < size; x2++) {
-                    row.push_back((*grid)[y2][x2]);
-                }
-                newGrid->push_back(row);
+                return resultSun;
             }
+            (*countX)[x][0] -= 1;
+            (*countY)[y][0] -= 1;
 
 
-            auto heuristic = heuristics(newGrid, x, y);
-            bool match = false;
-            bool retry = false;
-
-            if (heuristic != NONE) {
-                match = true;
-                retry = true;
-                (*newGrid)[y][x] = heuristic;
-            }
-
-            while (retry)
+            grid->setValue(x, y, FIELD_TYPE_MOON);
+            (*countX)[x][1] += 1;
+            (*countY)[y][1] += 1;
+            auto resultMoon = solve(x, y);
+            if (resultMoon != nullptr)
             {
-                retry = false;
-                for (uint8_t y = 0; y < size; y++)
-                {
-                    for (uint8_t x = 0; x < size; x++)
-                    {
-                        heuristic = heuristics(newGrid, x, y);
-                        if (heuristic != NONE) {
-                            retry = true;
-                            match = true;
-                            (*newGrid)[y][x] = heuristic;
-                        }
-                    }
-                }
+                return resultMoon;
             }
+            (*countX)[x][1] -= 1;
+            (*countY)[y][1] -= 1;
 
-            if(match)
-            {
-                auto heuristicResult = this->solve(newGrid);
-                if (heuristicResult != nullptr)
-                {
-                    return std::move(heuristicResult);
-                }
-                continue;
-            }
-
-            (*newGrid)[y][x] = SUN;
-            auto sunResult = this->solve(newGrid);
-            if(sunResult != nullptr)
-            {
-                return std::move(sunResult);
-            }
-
-            (*newGrid)[y][x] = MOON;
-            auto moonResult = this->solve(newGrid);
-            if(moonResult != nullptr)
-            {
-                return std::move(moonResult);
-            }
+            grid->setValue(x, y, FIELD_TYPE_NONE);
         }
+
+        currentFromX = 0;
+    }
+
+    if(checkIsValid() == COMPLETED)
+    {
+        return grid;
     }
 
     return nullptr;
 }
 
-TangoSolver::Type TangoSolver::heuristics(
-    const std::unique_ptr<std::vector<std::vector<uint8_t>>>& grid,
-    size_t x,
-    size_t y
-)
+bool TangoSolver::runHeuristics(const size_t x, const size_t y) const
 {
-    if((*grid)[y][x] != NONE)
+    if(runFieldHeuristics(x, y))
     {
-        return NONE;
+        //grid->setColor(x, y, ImVec4(1, 0, 0, 1));
+        return true;
     }
 
-    if (y >= 1 && y + 1 < grid->size() && (*grid)[y - 1][x] != NONE && (*grid)[y - 1][x] == (*grid)[y + 1][x])
+    if(runConstraintHeuristics(x, y))
     {
-        return (*grid)[y - 1][x] == SUN ? MOON : SUN;
+        //grid->setColor(x, y, ImVec4(0, 1, 0, 1));
+        return true;
     }
 
-    if (x >= 1 && x + 1 < grid->size() && (*grid)[y][x - 1] != NONE && (*grid)[y][x - 1] == (*grid)[y][x + 1])
+    if(runCountHeuristics(x, y))
     {
-        return (*grid)[y][x - 1] == SUN ? MOON : SUN;
+        //grid->setColor(x, y, ImVec4(0, 0, 1, 1));
+        return true;
     }
 
-    return NONE;
+    return false;
+}
+
+bool TangoSolver::runCountHeuristics(const size_t x, const size_t y) const
+{
+    const auto width = grid->getWidth();
+    const auto realWidth = static_cast<size_t>(std::floor((1.0 + width) * 0.5));
+    const auto neededSymbols = static_cast<int>(std::floor(realWidth * 0.5));
+
+    if(
+        ((*countX)[x][0] == neededSymbols && (*countX)[x][1] == neededSymbols - 1)
+        || ((*countX)[x][1] == neededSymbols && (*countX)[x][0] == neededSymbols - 1)
+    )
+    {
+        if((*countX)[x][0] < (*countX)[x][1])
+        {
+            grid->setValue(x, y, FIELD_TYPE_SUN);
+            return true;
+        }
+
+        grid->setValue(x, y, FIELD_TYPE_MOON); 
+        return true;
+    }
+
+    if (
+        ((*countY)[y][0] == neededSymbols && (*countY)[y][1] == neededSymbols - 1)
+        || ((*countY)[y][1] == neededSymbols && (*countY)[y][0] == neededSymbols - 1)
+    )
+    {
+        if ((*countY)[y][0] < (*countY)[y][1])
+        {
+            grid->setValue(x, y, FIELD_TYPE_SUN);
+            return true;
+        }
+
+        grid->setValue(x, y, FIELD_TYPE_MOON);
+        return true;
+    }
+
+    return false;
+}
+
+bool TangoSolver::runFieldHeuristics(const size_t x, const size_t y) const
+{
+    const auto current = grid->getValue(x, y);
+
+    if(current != FIELD_TYPE_NONE)
+    {
+        return false;
+    }
+
+    const char top = y > 0
+        ? grid->getValue(x, y - 2)
+        : INVALID;
+
+    const char right = x + 2 < grid->getWidth()
+        ? grid->getValue(x + 2, y)
+        : INVALID;
+
+    const char bottom = y + 2 < grid->getHeight()
+        ? grid->getValue(x, y + 2)
+        : INVALID;
+
+    const char left = x > 0
+        ? grid->getValue(x - 2, y)
+        : INVALID;
+
+    // We save one comparison by not checking the right value if it's also invalid
+    if (top != INVALID && top != FIELD_TYPE_NONE && top == bottom)
+    {
+        grid->setValue(x, y, top == FIELD_TYPE_SUN ? FIELD_TYPE_MOON : FIELD_TYPE_SUN);
+        return true;
+    }
+
+    if (left != INVALID && left != FIELD_TYPE_NONE && left == right)
+    {
+        grid->setValue(x, y, left == FIELD_TYPE_SUN ? FIELD_TYPE_MOON : FIELD_TYPE_SUN);
+        return true;
+    }
+
+    const auto topTop = y >= 4
+        ? grid->getValue(x, y - 4)
+        : INVALID;
+
+    if (topTop != INVALID && topTop != FIELD_TYPE_NONE && topTop == top)
+    {
+        grid->setValue(x, y, top == FIELD_TYPE_SUN ? FIELD_TYPE_MOON : FIELD_TYPE_SUN);
+        return true;
+    }
+
+    const auto leftLeft = x >= 4
+        ? grid->getValue(x - 4, y)
+        : INVALID;
+
+    if(leftLeft != INVALID && leftLeft != FIELD_TYPE_NONE && leftLeft == left)
+    {
+        grid->setValue(x, y, left == FIELD_TYPE_SUN ? FIELD_TYPE_MOON : FIELD_TYPE_SUN);
+        return true;
+    }
+
+    const auto rightRight = x + 4 < grid->getWidth()
+        ? grid->getValue(x + 4, y)
+        : INVALID;
+
+    if (rightRight != INVALID && rightRight != FIELD_TYPE_NONE && rightRight == right)
+    {
+        grid->setValue(x, y, right == FIELD_TYPE_SUN ? FIELD_TYPE_MOON : FIELD_TYPE_SUN);
+        return true;
+    }
+
+    const auto bottomBottom = y + 4 < grid->getHeight()
+        ? grid->getValue(x, y + 4)
+        : INVALID;
+
+    if (bottomBottom != INVALID && bottomBottom != FIELD_TYPE_NONE && bottomBottom == bottom)
+    {
+        grid->setValue(x, y, bottom == FIELD_TYPE_SUN ? FIELD_TYPE_MOON : FIELD_TYPE_SUN);
+        return true;
+    }
+
+    return false;
+}
+
+bool TangoSolver::runConstraintHeuristics(const size_t x, const size_t y, bool all) const
+{
+    const auto current = grid->getValue(x, y);
+
+    if (current != FIELD_TYPE_NONE)
+    {
+        return false;
+    }
+
+    const auto constraintLeft = x != 0
+        ? grid->getValue(x - 1, y)
+        : INVALID;
+
+    if(constraintLeft != INVALID)
+    {
+        const auto left = grid->getValue(x - 2, y);
+
+        if(constraintLeft == CONSTRAINT_EQUALS)
+        {
+            if(left != FIELD_TYPE_NONE)
+            {
+                grid->setValue(x, y, left);
+                return true;   
+            }
+        }
+        else if(constraintLeft == CONSTRAINT_NOT_EQUALS)
+        {
+            if (left != FIELD_TYPE_NONE)
+            {
+                grid->setValue(x, y, left == FIELD_TYPE_MOON ? FIELD_TYPE_SUN : FIELD_TYPE_MOON);
+                return true;
+            }
+        }
+    }
+
+    const auto constraintTop = y != 0
+        ? grid->getValue(x, y - 1)
+        : INVALID;
+
+    if(constraintTop != INVALID)
+    {
+        const auto top = grid->getValue(x, y - 2);
+
+        if (constraintTop == CONSTRAINT_EQUALS)
+        {
+            if (top != FIELD_TYPE_NONE)
+            {
+                grid->setValue(x, y, top);
+                return true;
+            }
+        }
+        else if (constraintTop == CONSTRAINT_NOT_EQUALS)
+        {
+            if (top != FIELD_TYPE_NONE)
+            {
+                grid->setValue(x, y, top == FIELD_TYPE_MOON ? FIELD_TYPE_SUN : FIELD_TYPE_MOON);
+                return true;
+            }
+        }
+    }
+
+    if(!all)
+    {
+        return false;
+    }
+
+    const auto constraintRight = x + 1 < grid->getWidth()
+        ? grid->getValue(x + 1, y)
+        : INVALID;
+
+    if (constraintRight != INVALID)
+    {
+        const auto right = grid->getValue(x + 2, y);
+
+        if (constraintRight == CONSTRAINT_EQUALS)
+        {
+            if (right != FIELD_TYPE_NONE)
+            {
+                grid->setValue(x, y, right);
+                return true;
+            }
+        }
+        else if (constraintRight == CONSTRAINT_NOT_EQUALS)
+        {
+            if (right != FIELD_TYPE_NONE)
+            {
+                grid->setValue(x, y, right == FIELD_TYPE_MOON ? FIELD_TYPE_SUN : FIELD_TYPE_MOON);
+                return true;
+            }
+        }
+    }
+
+    const auto constraintBottom = y + 1 < grid->getHeight()
+        ? grid->getValue(x, y + 1)
+        : INVALID;
+
+    if (constraintBottom != INVALID)
+    {
+        const auto bottom = grid->getValue(x, y + 2);
+
+        if (constraintBottom == CONSTRAINT_EQUALS)
+        {
+            if (bottom != FIELD_TYPE_NONE)
+            {
+                grid->setValue(x, y, bottom);
+                return true;
+            }
+        }
+        else if (constraintBottom == CONSTRAINT_NOT_EQUALS)
+        {
+            if (bottom != FIELD_TYPE_NONE)
+            {
+                grid->setValue(x, y, bottom == FIELD_TYPE_MOON ? FIELD_TYPE_SUN : FIELD_TYPE_MOON);
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+TangoSolver::ValidType TangoSolver::checkIsValid() const
+{
+    const auto width = grid->getWidth();
+    const auto realWidth  = static_cast<size_t>(std::floor((1.0 + width) * 0.5));
+    const auto neededSymbols = static_cast<int>(std::floor(realWidth * 0.5));
+
+    bool completed = true;
+
+    for(size_t i = 0; i < width; i += 2)
+    {
+        if(
+            (*countX)[i][0] > neededSymbols
+            || (*countX)[i][1] > neededSymbols
+            || (*countY)[i][0] > neededSymbols
+            || (*countY)[i][1] > neededSymbols
+        )
+        {
+            return CANCEL;
+        }
+
+        if(
+            (*countX)[i][0] != (*countX)[i][1]
+            || (*countY)[i][0] != (*countY)[i][1]
+            || (*countX)[i][0] != neededSymbols
+            || (*countY)[i][0] != neededSymbols
+        )
+        {
+            completed = false;
+        }
+    }
+
+    if(completed)
+    {
+        return COMPLETED;
+    }
+
+    return VALID;
 }
